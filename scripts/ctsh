@@ -1,0 +1,71 @@
+#!/usr/bin/python3
+
+import sys
+import subprocess
+import re
+import os
+
+def get_container_id(line):
+    columns = re.split("\s+", line) 
+    try:
+        return columns[0]
+    except:
+        print("Unexpected process line %s" % line)
+
+
+def get_command():
+    if len(sys.argv) == 3:
+        return sys.argv[2]
+    else:
+        return "bash"
+
+
+def exec_command(container_id):
+    command = "/usr/bin/docker exec -it {} {}".format(container_id, get_command())
+    print(command)
+    os.system(command)
+
+def pick_process(matches):
+    while True:
+        try:
+            choice = input("Enter # from choices above (or 'exit' to quit) >> ")
+            if choice == "exit":
+                sys.exit(0)
+            else:
+                choice_int = int(choice)
+                if choice_int >= 0 and choice_int < len(matches):
+                    exec_command(get_container_id(matches[choice_int]))
+                    break
+                else:
+                    print("Choice needs to be between 0 and %d" % (len(matches) - 1))
+        except Exception as e:
+            print("Please enter a valid number between 0 and %d" % (len(matches) - 1))
+
+ 
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print('''
+USAGE: containersh <name> [command]
+
+<name>      - image name or container name or part of container id
+[command]   - optional command to run
+''')
+    else:
+        name = sys.argv[1]
+        cmdpipe = subprocess.Popen("/usr/bin/docker ps", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (output, err) = cmdpipe.communicate()
+        matches = []
+        for line in output.decode('utf-8').split('\n'):
+            if re.search(name, line):
+                matches.append(line)
+        if len(matches) == 0:
+            print("No matching process")
+        elif len(matches) == 1:
+            exec_command(get_container_id(matches[0]))
+        else:
+            print("serveral matches:\n")
+            idx = 0    
+            for line in matches:
+                print("%d: %s" % (idx, line))
+                idx += 1
+            pick_process(matches)
