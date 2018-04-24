@@ -29,7 +29,7 @@ def exec_command(container_id):
 def match_id_image_or_alias(name, line):
     fields = re.split("\s{2,}", line)
     if len(fields) >= 7:
-        return re.search(name, fields[0]) or re.search(name, fields[1]) or re.search(name, fields[6])
+        return re.match(name, fields[0]) or re.match(name, fields[1]) or re.match(name, fields[6])
     else: 
         return False
         
