@@ -14,16 +14,18 @@ def get_container_id(line):
 
 
 def get_command():
-    if len(sys.argv) == 3:
-        return sys.argv[2]
+    if len(sys.argv) >= 3:
+        return sys.argv[2:]
     else:
-        return "bash"
+        return ["bash"]
 
 
 def exec_command(container_id):
-    command = "/usr/bin/docker exec -it {} {}".format(container_id, get_command())
-    print(command)
-    os.system(command)
+    command = ["/usr/bin/docker", "exec", "-it", container_id]
+    command.extend(get_command())
+    command_str = ' '.join(command)
+    print(command_str)
+    os.system(command_str)
 
 
 def match_id_image_or_alias(name, line):
