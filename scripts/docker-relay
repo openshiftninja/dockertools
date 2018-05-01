@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# This requires npiperelay. You can get that from here: https://github.com/jstarks/npiperelay
+# It also requires socat, which you can install using yum or apt
+#
+# To run, execute "sudo docker-relay". If you want to background it, you might have to run some other
+# sudo command first to take care of the whole passwd thingy
+
+exec socat UNIX-LISTEN:/var/run/docker.sock,fork,group=docker,umask=007 EXEC:"npiperelay -ep -s //./pipe/docker_engine",nofork
