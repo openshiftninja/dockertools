@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+
+import sys
+import subprocess
+import re
+import os
+
+def format_image_name_version(line):
+    columns = re.split("\s+", line)
+    try:
+        return "%s version %s".format(columns[0], columns[1])
+    except:
+        print("Unexpected process line %s" % line)
+
+
+def get_image_id(line):
+    columns = re.split("\s+", line)
+    try:
+        return columns[2]
+    except:
+        print("Unexpected process line %s" % line)
+
+def exec_command(image_id):
+    command = ["/usr/bin/docker", "rmi", image_id]
+    command.extend(get_command())
+    command_str = ' '.join(command)
+    print(command_str)
+    os.system(command_str)
+
+
+def match_id_image_or_alias(name, line):
+    fields_pattern = re.compile("^([^\s]+)\s+([a-z0-9<>\._-]+).+\s+([a-fA-F0-9]+)$")
+    matches = fields_pattern.match(line)
+    if matches:
+        image_name = matches.group(1)
+        image_version = matches.group(2)
+        image_id = matches.group(3)
+        return re.search(name, image_name) or re.search(name, image_id)
+    else: 
+        return False
+
+
+def pick_images(matches):
+    for match in matches:
+        while True:
+            try: 
+                option = format_image_name_version(line)
+                choice = input("Remove image %s (y/N)?" % match)
+                if choice == "y" or choice == "Y":
+                    exec_command(get_image_id(line))
+                elif choice == "n" or choice == "N" or choice == "":
+                    continue
+                else: 
+                    print("Please enter y/Y or n/N or hit return to accept N")
+            except Exception as e:
+                    print("Please enter y/Y or n/N or hit return to accept N")
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print('''
+USAGE: drmi <name>
+
+<name>      - image name or image id (will match a fragment)
+''')
+    else:
+        name = sys.argv[1]
+        cmdpipe = subprocess.Popen("/usr/bin/docker images", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (output, err) = cmdpipe.communicate()
+        matches = []
+        for line in output.decode('utf-8').split('\n'):
+            if re.search('IMAGE ID', line):
+                continue
+            if match_id_image_or_alias(name, line):
+                matches.append(line)
+        if len(matches) == 0:
+            print("No matching images")
+        else:
+            pick_images(matches)

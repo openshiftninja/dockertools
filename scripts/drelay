@@ -3,7 +3,8 @@
 # This requires npiperelay. You can get that from here: https://github.com/jstarks/npiperelay
 # It also requires socat, which you can install using yum or apt.
 #
-# To run, execute "sudo docker-relay" and leave it running. Docker commands should then work like normal. If you want to background it, you might
-# have to run some other sudo command first to take care of the whole passwd thingy.
+# To run, execute "sudo drelay" and leave it running. Docker commands should then work like normal. 
+# If you want to background it, you might have to run some other sudo command first to take care of 
+# the whole passwd thingy.
 
 exec socat UNIX-LISTEN:/var/run/docker.sock,fork,group=docker,umask=007 EXEC:"npiperelay -ep -s //./pipe/docker_engine",nofork
