@@ -60,9 +60,9 @@ def pick_process(matches):
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         print('''
-USAGE: containersh <name> [command]
+USAGE: ctsh <name> [command]
 
-<name>      - image name or container name or part of container id
+<name>      - image name or container name or container id (will match fragment)
 [command]   - optional command to run
 ''')
     else:
