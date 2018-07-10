@@ -64,7 +64,7 @@ def usage():
     print("""
 USAGE: drmi [-f] [-u] [<name>]
 
--f          - force removal, even if in use by container
+-f          - force removal, even if in use by stopped container
 -u          - remove untagged images (i.e., name = <none>)
 <name>      - image name or image id (will match a fragment)
 """)
