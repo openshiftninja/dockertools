@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 
 
 import sys
 import subprocess
@@ -20,16 +20,18 @@ def get_image_id(line):
     except:
         print("Unexpected process line %s" % line)
 
-def exec_command(image_id):
-    command = ["/usr/bin/docker", "rmi", image_id]
-    command.extend(get_command())
-    command_str = ' '.join(command)
+def exec_command(image_id, use_force):
+    command = ["/usr/bin/docker", "rmi"]
+    if use_force:
+        command.append("-f")
+    command.append(image_id)
+    command_str = " ".join(command)
     print(command_str)
     os.system(command_str)
 
 
 def match_id_image_or_alias(name, line):
-    fields_pattern = re.compile("^([^\s]+)\s+([a-z0-9<>\._-]+).+\s+([a-fA-F0-9]+)$")
+    fields_pattern = re.compile("^([^\s]+)\s+([^\s]+).+\s+([a-fA-F0-9]+)")
     matches = fields_pattern.match(line)
     if matches:
         image_name = matches.group(1)
@@ -40,39 +42,74 @@ def match_id_image_or_alias(name, line):
         return False
 
 
-def pick_images(matches):
+def pick_images(matches, use_force=False):
     for match in matches:
         while True:
             try: 
-                option = format_image_name_version(line)
-                choice = input("Remove image %s (y/N)?" % match)
+                option = format_image_name_version(match)
+                choice = input("Remove image %s (y/N)? " % match)
                 if choice == "y" or choice == "Y":
-                    exec_command(get_image_id(line))
+                    exec_command(get_image_id(match), use_force)
+                    break
                 elif choice == "n" or choice == "N" or choice == "":
-                    continue
+                    break 
                 else: 
                     print("Please enter y/Y or n/N or hit return to accept N")
+                    continue
             except Exception as e:
-                    print("Please enter y/Y or n/N or hit return to accept N")
-
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print('''
-USAGE: drmi <name>
-
-<name>      - image name or image id (will match a fragment)
-''')
-    else:
-        name = sys.argv[1]
-        cmdpipe = subprocess.Popen("/usr/bin/docker images", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (output, err) = cmdpipe.communicate()
-        matches = []
-        for line in output.decode('utf-8').split('\n'):
-            if re.search('IMAGE ID', line):
+                print("Please enter y/Y or n/N or hit return to accept N")
                 continue
-            if match_id_image_or_alias(name, line):
-                matches.append(line)
-        if len(matches) == 0:
-            print("No matching images")
+
+def usage():
+    print("""
+USAGE: drmi [-f] [-u] [<name>]
+
+-f          - force removal, even if in use by container
+-u          - remove untagged images (i.e., name = <none>)
+<name>      - image name or image id (will match a fragment)
+""")
+    exit(0)
+
+
+if __name__ == "__main__":
+    name = ""
+    use_force = False 
+    if len(sys.argv) == 1:
+        usage()
+    elif len(sys.argv) == 2:
+        name = sys.argv[1]
+        if name == "-u":
+            name = "<none>"
+    elif len(sys.argv) == 3:
+        arg1 = sys.argv[1]
+        arg2 = sys.argv[2]
+        if arg1 == "-f":
+            use_force == True
+        elif arg1 == "-u":
+            name = "<none>"
         else:
-            pick_images(matches)
+            usage()
+        if arg2 == "-f" and use_force:
+            usage()
+        elif arg2 == "-f":
+            use_force = True
+        elif arg2 == "-u":
+            name = "<none>"
+        else:
+            name = arg2
+    else:
+        usage()
+
+    cmdpipe = subprocess.Popen("/usr/bin/docker images", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    (output, err) = cmdpipe.communicate()
+    matches = []
+    for line in output.decode("utf-8").split("\n"):
+        if re.search("IMAGE ID", line):
+            continue
+        if match_id_image_or_alias(name, line):
+            matches.append(line)
+    if len(matches) == 0:
+        print("No matching images for name '%s'" % name)
+        usage()
+    else:
+        pick_images(matches, use_force)
