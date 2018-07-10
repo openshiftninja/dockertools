@@ -29,7 +29,7 @@ def exec_command(container_id):
 
 
 def match_id_image_or_alias(name, line):
-    fields_pattern = re.compile("^([a-f0-9]+)\s+([a-z0-9_-]+).+\s+([a-z_]+)$")
+    fields_pattern = re.compile("^([a-f0-9]+)\s+([^\s]+)\s+.+([a-z_0-9-]+)$")
     matches = fields_pattern.match(line)
     if matches:
         container_id = matches.group(1)
